@@ -1,0 +1,935 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>象屿盈信智能客服</title>
+  <style>
+    :root {
+      --red: #c91f25;
+      --red-dark: #a3131a;
+      --blue: #2458a6;
+      --green: #16a06f;
+      --ink: #151b24;
+      --muted: #798391;
+      --line: #d9dfe8;
+      --wechat: #ededed;
+      --white: #ffffff;
+      --shadow: 0 28px 80px rgba(21, 27, 36, 0.2);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      overflow-x: hidden;
+      font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+      color: var(--ink);
+      background: linear-gradient(180deg, #ffffff 0%, #f3f6fa 100%);
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    .page {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+    }
+
+    .phone-shell {
+      width: min(430px, calc(100vw - 24px));
+      padding: 10px;
+      border-radius: 28px;
+      background: #1f2630;
+      box-shadow: var(--shadow);
+      position: relative;
+    }
+
+    .phone-shell::before {
+      content: "";
+      position: absolute;
+      top: 5px;
+      left: 50%;
+      width: 102px;
+      height: 20px;
+      border-radius: 0 0 14px 14px;
+      background: #1f2630;
+      transform: translateX(-50%);
+      z-index: 3;
+    }
+
+    .phone {
+      height: min(820px, calc(100vh - 64px));
+      min-height: 660px;
+      overflow: hidden;
+      border-radius: 22px;
+      background: var(--wechat);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .status-bar {
+      height: 34px;
+      flex: 0 0 auto;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      padding: 0 18px;
+      background: #f7f7f7;
+      color: #4b5563;
+      font-size: 13px;
+    }
+
+    .status-icons {
+      justify-self: end;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .signal {
+      height: 11px;
+      display: inline-flex;
+      align-items: flex-end;
+      gap: 2px;
+    }
+
+    .signal i {
+      width: 3px;
+      display: block;
+      border-radius: 2px;
+      background: #4b5563;
+    }
+
+    .signal i:nth-child(1) { height: 4px; }
+    .signal i:nth-child(2) { height: 7px; }
+    .signal i:nth-child(3) { height: 10px; }
+
+    .battery {
+      width: 23px;
+      height: 12px;
+      border: 1.6px solid #4b5563;
+      border-radius: 3px;
+      position: relative;
+    }
+
+    .battery::before {
+      content: "";
+      position: absolute;
+      left: 2px;
+      top: 2px;
+      width: 14px;
+      height: 6px;
+      border-radius: 1px;
+      background: #4b5563;
+    }
+
+    .battery::after {
+      content: "";
+      position: absolute;
+      right: -4px;
+      top: 3px;
+      width: 2px;
+      height: 6px;
+      border-radius: 0 2px 2px 0;
+      background: #4b5563;
+    }
+
+    .wechat-head {
+      height: 58px;
+      flex: 0 0 auto;
+      background: #f7f7f7;
+      border-bottom: 1px solid #d7d7d7;
+      display: grid;
+      grid-template-columns: 54px 1fr 54px;
+      align-items: center;
+    }
+
+    .icon-btn {
+      height: 58px;
+      border: 0;
+      background: transparent;
+      color: #111827;
+      display: grid;
+      place-items: center;
+      position: relative;
+    }
+
+    .back::before {
+      content: "";
+      width: 15px;
+      height: 15px;
+      border-left: 3px solid currentColor;
+      border-bottom: 3px solid currentColor;
+      transform: rotate(45deg);
+      margin-left: 8px;
+    }
+
+    .person::before,
+    .person::after {
+      content: "";
+      position: absolute;
+      border: 2.5px solid currentColor;
+    }
+
+    .person::before {
+      width: 16px;
+      height: 16px;
+      top: 13px;
+      left: 18px;
+      border-radius: 50%;
+    }
+
+    .person::after {
+      width: 27px;
+      height: 15px;
+      left: 13px;
+      top: 32px;
+      border-top: 0;
+      border-radius: 0 0 18px 18px;
+    }
+
+    .title {
+      text-align: center;
+      font-size: 20px;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .chat {
+      flex: 1 1 auto;
+      min-height: 0;
+      background: var(--wechat);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .chat-scroll {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      padding: 18px 14px 12px;
+      scroll-behavior: smooth;
+    }
+
+    .chat-scroll::-webkit-scrollbar,
+    .quick-bar::-webkit-scrollbar {
+      width: 0;
+      height: 0;
+    }
+
+    .date-line {
+      text-align: center;
+      color: #9ba1aa;
+      font-size: 13px;
+      margin: 0 0 14px;
+    }
+
+    .msg {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin: 0 0 12px;
+    }
+
+    .msg.user {
+      justify-content: flex-end;
+    }
+
+    .avatar,
+    .user-avatar {
+      width: 36px;
+      height: 36px;
+      flex: 0 0 36px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+    }
+
+    .avatar {
+      border: 1px solid #e8edf3;
+      background: #fff;
+      overflow: hidden;
+    }
+
+    .avatar::before {
+      content: "";
+      width: 17px;
+      height: 24px;
+      border-radius: 18px 4px 18px 4px;
+      background: linear-gradient(145deg, #e7484e, var(--red));
+      transform: rotate(28deg) skewY(-12deg);
+    }
+
+    .user-avatar {
+      color: var(--blue);
+      background: #dfe9f5;
+      font-weight: 800;
+    }
+
+    .bubble {
+      max-width: calc(100% - 50px);
+      padding: 12px 13px;
+      border-radius: 8px;
+      background: #fff;
+      font-size: 14px;
+      line-height: 1.7;
+      word-break: break-word;
+      box-shadow: 0 1px 0 rgba(21, 27, 36, 0.05);
+    }
+
+    .user .bubble {
+      background: #b9ec92;
+      color: #13220d;
+    }
+
+    .bubble p {
+      margin: 0 0 9px;
+    }
+
+    .bubble p:last-child {
+      margin-bottom: 0;
+    }
+
+    .keyword-list {
+      display: grid;
+      gap: 5px;
+      margin: 9px 0;
+    }
+
+    .keyword-line {
+      display: grid;
+      grid-template-columns: 75px 1fr;
+      gap: 6px;
+      line-height: 1.5;
+    }
+
+    .keyword-line b {
+      color: var(--blue);
+      white-space: nowrap;
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 22px;
+      border-radius: 8px;
+      padding: 3px 7px;
+      color: var(--blue);
+      background: #eef4ff;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .handoff-box {
+      border: 1px solid #efc5c7;
+      background: #fff3f3;
+      color: #6d1f1f;
+      padding: 10px;
+      border-radius: 8px;
+      margin-top: 9px;
+    }
+
+    .handoff-box strong {
+      color: var(--red-dark);
+    }
+
+    .quick-bar {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 8px 10px 10px;
+      border-top: 1px solid #dddddd;
+      background: var(--wechat);
+    }
+
+    .chip {
+      flex: 0 0 auto;
+      border: 1px solid #d6dfeb;
+      border-radius: 8px;
+      background: #fff;
+      color: var(--ink);
+      padding: 8px 10px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .composer {
+      flex: 0 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 62px;
+      gap: 8px;
+      padding: 10px;
+      background: #f7f7f7;
+      border-top: 1px solid #dadada;
+    }
+
+    .composer input {
+      width: 100%;
+      min-width: 0;
+      border: 1px solid #d4dce7;
+      border-radius: 8px;
+      outline: 0;
+      padding: 11px 12px;
+      background: #fff;
+      color: var(--ink);
+    }
+
+    .composer input:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(36, 88, 166, 0.13);
+    }
+
+    .send {
+      border: 0;
+      border-radius: 8px;
+      background: var(--green);
+      color: #fff;
+      cursor: pointer;
+      font-weight: 800;
+    }
+
+    .bottom-menu {
+      height: 72px;
+      flex: 0 0 auto;
+      display: grid;
+      grid-template-columns: 52px repeat(3, minmax(0, 1fr));
+      border-top: 1px solid #dcdcdc;
+      background: #f8f8f8;
+    }
+
+    .keyboard {
+      border-right: 1px solid #dedede;
+      display: grid;
+      place-items: center;
+    }
+
+    .keyboard::before {
+      content: "";
+      width: 30px;
+      height: 30px;
+      border: 2.4px solid #111827;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle, #111827 0 2px, transparent 2.5px) 7px 8px / 8px 8px,
+        radial-gradient(circle, #111827 0 2px, transparent 2.5px) 15px 8px / 8px 8px,
+        radial-gradient(circle, #111827 0 2px, transparent 2.5px) 23px 8px / 8px 8px,
+        radial-gradient(circle, #111827 0 2px, transparent 2.5px) 7px 16px / 8px 8px,
+        radial-gradient(circle, #111827 0 2px, transparent 2.5px) 15px 16px / 8px 8px,
+        radial-gradient(circle, #111827 0 2px, transparent 2.5px) 23px 16px / 8px 8px;
+      background-repeat: no-repeat;
+    }
+
+    .menu-item {
+      min-width: 0;
+      border: 0;
+      border-right: 1px solid #dedede;
+      background: transparent;
+      color: #111827;
+      cursor: pointer;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      padding: 0 8px;
+      font-weight: 800;
+    }
+
+    .menu-item:last-child {
+      border-right: 0;
+    }
+
+    .menu-item span:first-child {
+      justify-self: center;
+      white-space: nowrap;
+      font-size: 16px;
+    }
+
+    .menu-mark {
+      color: #9aa1ab;
+      font-size: 12px;
+    }
+
+    .typing {
+      display: inline-flex;
+      gap: 4px;
+      align-items: center;
+      min-width: 42px;
+    }
+
+    .typing i {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #9ba1aa;
+      animation: bounce 0.9s infinite ease-in-out;
+    }
+
+    .typing i:nth-child(2) { animation-delay: 0.15s; }
+    .typing i:nth-child(3) { animation-delay: 0.3s; }
+
+    @keyframes bounce {
+      0%, 80%, 100% { transform: translateY(0); opacity: 0.45; }
+      40% { transform: translateY(-4px); opacity: 1; }
+    }
+
+    @media (max-width: 520px) {
+      .page {
+        padding: 6px;
+      }
+
+      .phone-shell {
+        width: 360px;
+        max-width: calc(100vw - 12px);
+        padding: 6px;
+        border-radius: 20px;
+      }
+
+      .phone {
+        height: calc(100vh - 12px);
+        min-height: 650px;
+        border-radius: 16px;
+      }
+
+      .bubble {
+        font-size: 13px;
+      }
+
+      .keyword-line {
+        grid-template-columns: 68px 1fr;
+      }
+
+      .menu-item {
+        padding: 0 3px;
+      }
+
+      .menu-item span:first-child {
+        font-size: 14px;
+      }
+
+      .menu-mark {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="phone-shell" aria-label="象屿盈信公众号智能客服">
+      <div class="phone">
+        <div class="status-bar">
+          <span></span>
+          <strong>09:41</strong>
+          <span class="status-icons" aria-hidden="true">
+            <span class="signal"><i></i><i></i><i></i></span>
+            <span>5G</span>
+            <span class="battery"></span>
+          </span>
+        </div>
+        <div class="wechat-head">
+          <button class="icon-btn back" type="button" aria-label="返回"></button>
+          <div class="title">象屿盈信</div>
+          <button class="icon-btn person" type="button" aria-label="账户"></button>
+        </div>
+        <div class="chat">
+          <div class="chat-scroll" id="chat"></div>
+          <div class="quick-bar" id="quickBar"></div>
+          <form class="composer" id="composer">
+            <input id="userInput" autocomplete="off" placeholder="请输入您的问题" />
+            <button class="send" type="submit">发送</button>
+          </form>
+        </div>
+        <nav class="bottom-menu" aria-label="公众号底部菜单">
+          <div class="keyboard" aria-hidden="true"></div>
+          <button class="menu-item" type="button" data-menu="党建引领"><span>党建引领</span><span class="menu-mark">▾</span></button>
+          <button class="menu-item" type="button" data-menu="业务办理"><span>业务办理</span><span class="menu-mark">⌕</span></button>
+          <button class="menu-item" type="button" data-menu="客服中心"><span>客服中心</span><span class="menu-mark">≡</span></button>
+        </nav>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const state = {
+      knowledge: [],
+      lastMatch: null,
+      collected: { name: false, plate: false, phone: false },
+    };
+
+    const els = {
+      chat: document.getElementById("chat"),
+      quickBar: document.getElementById("quickBar"),
+      composer: document.getElementById("composer"),
+      userInput: document.getElementById("userInput"),
+    };
+
+    const quickPrompts = [
+      "我要还款",
+      "查账单还剩几期",
+      "提前结清多少钱",
+      "结清后怎么解押",
+      "我要开发票",
+      "GPS装在哪里",
+      "卡里有钱没扣",
+      "转人工",
+    ];
+
+    const hardHandoffRules = [
+      { terms: ["人工", "真人", "转人工", "人工客服"], reason: "客户明确要求人工服务" },
+      { terms: ["投诉", "举报", "态度差", "没人处理", "催收争议"], reason: "投诉或服务争议" },
+      { terms: ["减免", "少收", "能不能免", "免掉"], reason: "涉及费用减免审批" },
+      { terms: ["多少钱", "金额", "尾款", "全款多少", "结清试算", "费用高", "滞纳金多少", "罚息多少"], reason: "涉及具体金额核算" },
+      { terms: ["已扣款", "扣了", "没到账", "未入账", "账单没更新", "重复扣款"], reason: "可能存在账务或系统异常" },
+      { terms: ["打不开", "系统异常", "页面异常", "无法提交", "12123无法", "车管所说不能"], reason: "系统、页面或车管所反馈异常" },
+      { terms: ["车被拖走", "拖车", "法务", "公证", "解除合同"], reason: "涉及法务、拖车或严重违约事项" },
+      { terms: ["退费", "退款", "重开", "作废", "抬头错", "税号错"], reason: "涉及财务异常或票据更正" },
+      { terms: ["车在哪里", "定位查询", "查定位", "gps当前位置"], reason: "定位信息涉及隐私和风险核实" },
+      { terms: ["材料丢", "寄错", "快递异常", "急用"], reason: "材料或快递异常需要人工跟进" },
+    ];
+
+    const actionHints = [
+      { test: (row) => row.category === "还款类" && row.issue.includes("账单"), text: "下一步可点击底部【业务办理】进入【还款/账单】页面查看账单、还款计划和已还期数。" },
+      { test: (row) => row.category === "还款类" && row.issue.includes("失败"), text: "建议先核对银行卡余额、限额、冻结状态和绑定卡是否变更；如已扣款未入账，需要人工核对凭证。" },
+      { test: (row) => row.category === "结清类" && row.issue.includes("金额"), text: "结清金额不能直接由机器人承诺，需要系统试算并由工作人员确认最终金额。" },
+      { test: (row) => row.category === "结清类", text: "结清类问题通常需要核实姓名、车牌号和联系电话，确认款项、材料、结清文件和解押节点。" },
+      { test: (row) => row.category === "解押类", text: "如符合云解押条件，请在【交管12123】APP：首页→更多→机动车业务→解除抵押中确认；页面异常时请截图。" },
+      { test: (row) => row.category === "发票类", text: "请先明确发票类型、抬头、税号、车牌号和联系方式；金额、主体或重开作废需要人工核实。" },
+      { test: (row) => row.category === "材料类", text: "材料问题建议先补齐姓名、车牌号、联系电话、收件地址或快递信息，便于工作人员查件。" },
+      { test: (row) => row.category === "逾期类", text: "逾期相关问题请优先安排还款；涉及协商、减免、严重逾期或车辆处置时必须人工核实。" },
+      { test: (row) => row.category === "GPS/车辆类", text: "GPS和车辆状态涉及隐私、合同状态或车辆风险，机器人只做流程引导，敏感查询需人工核实身份。" },
+      { test: (row) => row.category === "人工服务类", text: "人工服务时间为周一至周五 9:00-12:00、14:00-18:00，节假日除外。" },
+    ];
+
+    init();
+
+    async function init() {
+      renderQuickPrompts();
+      appendDate();
+      try {
+        const response = await fetch("knowledge.json", { cache: "no-store" });
+        const payload = await response.json();
+        state.knowledge = payload.rows;
+        appendBot(welcomeHtml(payload), { category: "欢迎语", issue: "客服入口" });
+
+        const ask = new URLSearchParams(window.location.search).get("ask");
+        if (ask) {
+          setTimeout(() => {
+            els.userInput.value = ask;
+            sendUserMessage();
+          }, 450);
+        }
+      } catch (error) {
+        appendBot("<p>知识库加载失败，请刷新页面重试。</p>");
+      }
+    }
+
+    function welcomeHtml(payload) {
+      return `
+        <p><strong>您好，欢迎关注象屿盈信。</strong></p>
+        <p>您可以直接输入售后问题，例如“我要还款”“提前结清多少钱”“结清后怎么解押”“GPS装在哪里”。</p>
+        <p>我已接入 ${payload.total} 条售后知识库内容，会根据您的描述自动回复；涉及金额、减免、投诉、系统异常等情况，会先收集关键信息并引导转人工核实。</p>
+        <div class="keyword-list">
+          <div class="keyword-line"><b>【还款】</b><span>还款方式、扣款时间、账单信息</span></div>
+          <div class="keyword-line"><b>【结清】</b><span>提前结清、金额试算、材料进度</span></div>
+          <div class="keyword-line"><b>【解押】</b><span>云解押、线下解押、12123路径</span></div>
+          <div class="keyword-line"><b>【发票】</b><span>月租、GPS费、公证费等发票</span></div>
+          <div class="keyword-line"><b>【人工】</b><span>联系工作人员协助处理</span></div>
+        </div>
+      `;
+    }
+
+    function renderQuickPrompts() {
+      els.quickBar.innerHTML = quickPrompts
+        .map((text) => `<button class="chip" type="button">${escapeHtml(text)}</button>`)
+        .join("");
+      els.quickBar.querySelectorAll(".chip").forEach((button) => {
+        button.addEventListener("click", () => {
+          els.userInput.value = button.textContent;
+          sendUserMessage();
+        });
+      });
+    }
+
+    function appendDate() {
+      const line = document.createElement("div");
+      line.className = "date-line";
+      line.textContent = "智能客服";
+      els.chat.appendChild(line);
+    }
+
+    function appendBot(html, match = null, handoff = null) {
+      removeTyping();
+      const row = document.createElement("div");
+      row.className = "msg bot";
+      const meta = match ? `
+        <div class="meta">
+          <span class="tag">${escapeHtml(match.category || "知识库")}</span>
+          ${match.issue ? `<span class="tag">${escapeHtml(match.issue)}</span>` : ""}
+          ${handoff ? `<span class="tag">建议转人工</span>` : ""}
+        </div>
+      ` : "";
+      row.innerHTML = `<div class="avatar" aria-hidden="true"></div><div class="bubble">${html}${meta}</div>`;
+      els.chat.appendChild(row);
+      scrollBottom();
+    }
+
+    function appendUser(text) {
+      const row = document.createElement("div");
+      row.className = "msg user";
+      row.innerHTML = `<div class="bubble">${escapeHtml(text)}</div><div class="user-avatar" aria-hidden="true">客</div>`;
+      els.chat.appendChild(row);
+      scrollBottom();
+    }
+
+    function showTyping() {
+      removeTyping();
+      const row = document.createElement("div");
+      row.className = "msg bot typing-row";
+      row.innerHTML = `<div class="avatar" aria-hidden="true"></div><div class="bubble"><span class="typing"><i></i><i></i><i></i></span></div>`;
+      els.chat.appendChild(row);
+      scrollBottom();
+    }
+
+    function removeTyping() {
+      const old = els.chat.querySelector(".typing-row");
+      if (old) old.remove();
+    }
+
+    function scrollBottom() {
+      els.chat.scrollTop = els.chat.scrollHeight;
+      setTimeout(() => {
+        els.chat.scrollTop = els.chat.scrollHeight;
+      }, 30);
+    }
+
+    els.composer.addEventListener("submit", (event) => {
+      event.preventDefault();
+      sendUserMessage();
+    });
+
+    document.querySelectorAll(".menu-item").forEach((button) => {
+      button.addEventListener("click", () => {
+        const name = button.dataset.menu;
+        appendUser(`点击菜单：${name}`);
+        showTyping();
+        setTimeout(() => {
+          if (name === "业务办理") {
+            appendBot("<p>您已进入【业务办理】。常用入口包括还款/账单、结清进度、资料变更、发票申请等。您也可以直接输入想办理的业务，我会帮您匹配。</p>");
+          } else if (name === "客服中心") {
+            appendBot("<p>客服中心可处理常见问题、网点查询、人工登记等。您可以直接回复【人工】或描述具体问题。</p>");
+          } else {
+            appendBot("<p>党建引领栏目保持原有入口不变。本页面主要模拟智能客服聊天能力，请继续输入售后业务问题。</p>");
+          }
+        }, 420);
+      });
+    });
+
+    function sendUserMessage() {
+      const text = els.userInput.value.trim();
+      if (!text) return;
+      els.userInput.value = "";
+      appendUser(text);
+      updateCollectedInfo(text);
+      showTyping();
+      setTimeout(() => {
+        const result = answer(text);
+        appendBot(result.html, result.match, result.handoff);
+      }, 520);
+    }
+
+    function answer(text) {
+      const match = findBestMatch(text);
+      if (!match || match.score < 3) {
+        return {
+          html: fallbackAnswer(text),
+          match: { category: "未明确匹配", issue: "请补充问题" },
+          handoff: null,
+        };
+      }
+
+      const handoff = detectHandoff(text, match.row);
+      const isFollow = state.lastMatch && state.lastMatch.id === match.row.id && isFollowUp(text);
+      state.lastMatch = match.row;
+
+      const parts = [];
+      parts.push(`<p>${escapeHtml(isFollow && match.row.followReply ? match.row.followReply : match.row.firstReply)}</p>`);
+
+      const hint = inferAction(match.row);
+      if (hint) parts.push(`<p><strong>下一步建议：</strong>${escapeHtml(hint)}</p>`);
+
+      if (handoff) {
+        parts.push(`
+          <div class="handoff-box">
+            <p><strong>这个情况建议转人工核实。</strong></p>
+            <p>原因：${escapeHtml(handoff.reason)}。</p>
+            <p>${escapeHtml(infoRequest(match.row, text))}</p>
+          </div>
+        `);
+      } else if (match.row.handoff) {
+        parts.push(`<p>如果出现“${escapeHtml(match.row.handoff)}”这类情况，我会为您登记人工核实。</p>`);
+      }
+
+      const collected = collectedText();
+      if (collected) parts.push(`<p>${escapeHtml(collected)}</p>`);
+
+      return { html: parts.join(""), match: match.row, handoff };
+    }
+
+    function findBestMatch(text) {
+      const normalized = normalize(text);
+      let best = null;
+
+      for (const row of state.knowledge) {
+        let score = 0;
+        for (const keyword of row.keywords) {
+          const key = normalize(keyword);
+          if (!key) continue;
+          if (normalized.includes(key)) score += Math.min(12, 4 + key.length * 0.8);
+          if (key.includes(normalized) && normalized.length >= 2) score += 2;
+        }
+
+        for (const token of issueTokens(row.issue)) {
+          if (normalized.includes(normalize(token))) score += 3;
+        }
+
+        if (normalized.includes(normalize(row.category.replace("类", "")))) score += 2.5;
+        if (state.lastMatch && state.lastMatch.category === row.category && isFollowUp(text)) score += 2;
+        if (state.lastMatch && state.lastMatch.id === row.id && isFollowUp(text)) score += 4;
+
+        if (!best || score > best.score) best = { row, score };
+      }
+
+      return best;
+    }
+
+    function issueTokens(issue) {
+      return issue
+        .replace(/[\/（）()]/g, " ")
+        .split(/\s+/)
+        .map((item) => item.trim())
+        .filter((item) => item.length >= 2);
+    }
+
+    function detectHandoff(text, row) {
+      const normalized = normalize(text);
+      for (const rule of hardHandoffRules) {
+        if (rule.terms.some((term) => normalized.includes(normalize(term)))) {
+          return { reason: rule.reason };
+        }
+      }
+
+      const handoffTerms = row.handoff
+        .replace(/[。；;,，、]/g, "|")
+        .split("|")
+        .map((item) => item.trim())
+        .filter((item) => item.length >= 3 && !item.includes("一律"));
+
+      for (const term of handoffTerms) {
+        const core = normalize(term.replace("客户", "").replace("要求", "").replace("涉及", ""));
+        if (core && (normalized.includes(core) || core.includes(normalized))) {
+          return { reason: term };
+        }
+      }
+
+      if (row.handoff.includes("一律转人工")) {
+        const strongTerms = ["金额", "减免", "代偿", "异常", "责任", "定位", "投诉", "争议"];
+        if (strongTerms.some((term) => normalized.includes(normalize(term)) || normalize(row.issue + row.handoff).includes(normalize(term)))) {
+          return { reason: row.handoff };
+        }
+      }
+
+      return null;
+    }
+
+    function inferAction(row) {
+      const item = actionHints.find((hint) => hint.test(row));
+      return item ? item.text : row.followReply || "";
+    }
+
+    function infoRequest(row, text) {
+      const base = ["请留下姓名", "车牌号", "联系电话"];
+      const normalized = normalize(row.issue + row.handoff + text);
+      if (normalized.includes("截图") || normalized.includes("12123") || normalized.includes("系统") || normalized.includes("扣款") || normalized.includes("未入账")) {
+        base.push("相关截图或凭证");
+      }
+      if (normalized.includes("发票") || normalized.includes("抬头") || normalized.includes("税号")) {
+        base.push("发票类型/抬头/税号");
+      }
+      if (normalized.includes("材料") || normalized.includes("快递") || normalized.includes("寄")) {
+        base.push("收件地址或快递信息");
+      }
+      if (normalized.includes("gps") || normalized.includes("定位")) {
+        base.push("查询原因");
+      }
+      return `${base.join("、")}，工作人员会结合合同和系统记录进一步核实。`;
+    }
+
+    function fallbackAnswer(text) {
+      const last = state.lastMatch;
+      if (last && isFollowUp(text)) {
+        return `
+          <p>我理解您是在继续咨询【${escapeHtml(last.issue)}】。${escapeHtml(last.followReply || last.firstReply)}</p>
+          <p>为了更准确处理，请您再补充一下：您现在是想查询进度、办理流程，还是遇到了系统、金额或材料异常？</p>
+        `;
+      }
+
+      return `
+        <p>我暂时没有完全识别您的问题。您可以换一种说法，或直接回复关键词：还款、账单、结清、解押、发票、材料、逾期、GPS、人工。</p>
+        <p>如果事情比较紧急，也可以留下姓名、车牌号、联系电话和问题描述，我会按人工登记逻辑处理。</p>
+      `;
+    }
+
+    function updateCollectedInfo(text) {
+      if (/姓名|我是|我叫|先生|女士/.test(text)) state.collected.name = true;
+      if (/[京津沪渝冀豫云辽黑湘皖鲁新苏浙赣鄂桂甘晋蒙陕吉闽贵粤青藏川宁琼][A-Z0-9][A-Z0-9·.-]{4,7}/i.test(text) || /车牌/.test(text)) state.collected.plate = true;
+      if (/1[3-9]\d{9}/.test(text) || /电话|手机号|联系方式/.test(text)) state.collected.phone = true;
+    }
+
+    function collectedText() {
+      const missing = [];
+      if (!state.collected.name) missing.push("姓名");
+      if (!state.collected.plate) missing.push("车牌号");
+      if (!state.collected.phone) missing.push("联系电话");
+      if (missing.length === 3) return "";
+      if (missing.length === 0) return "您提供的姓名、车牌号和联系电话已较完整，后续可进入人工核实或业务登记。";
+      return `我已记录到部分信息，如需人工核实，还差：${missing.join("、")}。`;
+    }
+
+    function isFollowUp(text) {
+      return /那|还|怎么|多久|多少|为什么|可以|能不能|哪里|入口|需要|然后|下一步|没找到|不行|怎么办|呢/.test(text) || text.length <= 8;
+    }
+
+    function normalize(value) {
+      return String(value || "")
+        .toLowerCase()
+        .replace(/\s/g, "")
+        .replace(/[，。？！、,.!?;；:：'"“”‘’（）()【】\[\]<>《》-]/g, "");
+    }
+
+    function escapeHtml(value) {
+      return String(value || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+  </script>
+</body>
+</html>
