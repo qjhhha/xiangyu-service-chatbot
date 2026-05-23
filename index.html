@@ -580,6 +580,7 @@
     };
 
     const quickPrompts = [
+      "你好",
       "我要还款",
       "查账单还剩几期",
       "提前结清多少钱",
@@ -601,6 +602,81 @@
       { terms: ["退费", "退款", "重开", "作废", "抬头错", "税号错"], reason: "涉及财务异常或票据更正" },
       { terms: ["车在哪里", "定位查询", "查定位", "gps当前位置"], reason: "定位信息涉及隐私和风险核实" },
       { terms: ["材料丢", "寄错", "快递异常", "急用"], reason: "材料或快递异常需要人工跟进" },
+    ];
+
+    const businessWords = [
+      "还款", "账单", "扣款", "代扣", "还款卡", "银行卡", "结清", "提前还", "全款", "尾款",
+      "解押", "解除抵押", "云解押", "12123", "绿本", "大本", "登记证", "发票", "开票",
+      "抬头", "税号", "材料", "快递", "钥匙", "结清证明", "逾期", "延期", "宽限期",
+      "滞纳金", "罚息", "减免", "GPS", "定位", "车辆", "车牌", "过户", "卖车",
+      "保险", "年检", "人工", "客服", "投诉", "法务", "公证", "拖车", "系统异常",
+    ];
+
+    const generalReplies = [
+      {
+        type: "问候",
+        patterns: [/^(你好|您好|哈喽|hello|hi|嗨|在吗|在不在|有人吗)$/i, /^(早上好|上午好|中午好|下午好|晚上好)$/],
+        reply: () => `
+          <p>您好，象屿盈信智能客服在的。</p>
+          <p>您可以直接告诉我想咨询的问题，比如还款、账单、提前结清、车辆解押、发票、资料变更、GPS 或人工服务。我会先帮您判断并给出办理指引。</p>
+        `,
+      },
+      {
+        type: "身份说明",
+        patterns: [/你是谁|你是什么|机器人吗|是真人吗|是不是人工|你能干嘛|你可以做什么|有什么功能|怎么用/],
+        reply: () => `
+          <p>我是象屿盈信智能客服助手，可以协助解答售后常见问题，并根据情况引导您办理下一步。</p>
+          <p>我可以处理还款方式、账单查询、结清流程、解押路径、发票申请、材料寄送、逾期说明、GPS/车辆相关咨询等问题。涉及具体金额、减免、投诉、系统异常等情况，会建议转人工核实。</p>
+        `,
+      },
+      {
+        type: "感谢",
+        patterns: [/谢谢|感谢|辛苦了|麻烦你了|多谢|好的谢谢|收到谢谢/],
+        reply: () => `
+          <p>不客气，很高兴能帮到您。</p>
+          <p>后续如果还需要查询账单、办理结清解押、申请发票或联系人工客服，可以继续在这里留言。</p>
+        `,
+      },
+      {
+        type: "确认",
+        patterns: [/^(好的|好|嗯|嗯嗯|知道了|明白了|收到|可以|行|OK|ok)$/],
+        reply: () => `
+          <p>好的。</p>
+          <p>如果您要继续办理业务，请直接描述具体事项；如果需要工作人员核实，请尽量补充姓名、车牌号和联系电话，方便后续对接。</p>
+        `,
+      },
+      {
+        type: "告别",
+        patterns: [/再见|拜拜|回头再说|没事了|不用了|先这样/],
+        reply: () => `
+          <p>好的，感谢您的咨询。</p>
+          <p>后续如有还款、结清、解押、发票或其他售后问题，您可以随时再进入公众号客服咨询。</p>
+        `,
+      },
+      {
+        type: "安抚",
+        patterns: [/着急|很急|烦|生气|无语|不满意|太慢了|一直没人|怎么还没处理/],
+        reply: () => `
+          <p>理解您的心情，给您带来不便非常抱歉。</p>
+          <p>为了尽快判断处理路径，请您补充一下具体事项，以及姓名、车牌号和联系电话。若涉及投诉、账务异常、材料急用或系统问题，我会按转人工核实的方式处理。</p>
+        `,
+      },
+      {
+        type: "人工入口",
+        patterns: [/人工服务时间|客服电话|电话多少|怎么联系你们|客服热线|联系方式/],
+        reply: () => `
+          <p>客服热线：0592-5661616。</p>
+          <p>人工服务时间为周一至周五 9:00-12:00、14:00-18:00，节假日除外。若当前不在人工服务时段，您可以先留下姓名、车牌号、联系电话和问题描述，工作人员会按顺序跟进。</p>
+        `,
+      },
+      {
+        type: "非业务闲聊",
+        patterns: [/天气|讲个笑话|你会聊天吗|你聪明吗|你叫什么|陪我聊|心情不好|测试一下/],
+        reply: () => `
+          <p>我在的，可以简单陪您聊两句，不过我主要负责象屿盈信售后业务咨询。</p>
+          <p>如果您有合同、还款、结清、解押、发票、材料、逾期或车辆相关问题，直接告诉我，我会按知识库给您更准确的答复。</p>
+        `,
+      },
     ];
 
     const actionHints = [
@@ -716,6 +792,9 @@
       setTimeout(() => {
         els.chat.scrollTop = els.chat.scrollHeight;
       }, 30);
+      setTimeout(() => {
+        els.chat.scrollTop = els.chat.scrollHeight;
+      }, 180);
     }
 
     els.composer.addEventListener("submit", (event) => {
@@ -755,10 +834,19 @@
 
     function answer(text) {
       const match = findBestMatch(text);
+      const general = findGeneralReply(text);
+      if (general && !isBusinessIntent(text, match)) {
+        return {
+          html: general.reply(),
+          match: { category: "智能客服", issue: general.type },
+          handoff: null,
+        };
+      }
+
       if (!match || match.score < 3) {
         return {
-          html: fallbackAnswer(text),
-          match: { category: "未明确匹配", issue: "请补充问题" },
+          html: general ? general.reply() : fallbackAnswer(text),
+          match: { category: "智能客服", issue: general ? general.type : "请补充问题" },
           handoff: null,
         };
       }
@@ -789,6 +877,26 @@
       if (collected) parts.push(`<p>${escapeHtml(collected)}</p>`);
 
       return { html: parts.join(""), match: match.row, handoff };
+    }
+
+    function findGeneralReply(text) {
+      return generalReplies.find((item) => item.patterns.some((pattern) => pattern.test(text.trim())));
+    }
+
+    function isBusinessIntent(text, match) {
+      const normalized = normalize(text);
+      const hasBusinessWord = businessWords.some((word) => normalized.includes(normalize(word)));
+      const hasKnowledgeKeyword = state.knowledge.some((row) =>
+        row.keywords.some((keyword) => {
+          const key = normalize(keyword);
+          return key.length >= 2 && normalized.includes(key);
+        }),
+      );
+
+      if (hasBusinessWord || hasKnowledgeKeyword) return true;
+      if (match && match.score >= 8) return true;
+      if (state.lastMatch && isFollowUp(text) && !findGeneralReply(text)) return true;
+      return false;
     }
 
     function findBestMatch(text) {
@@ -890,8 +998,9 @@
       }
 
       return `
-        <p>我暂时没有完全识别您的问题。您可以换一种说法，或直接回复关键词：还款、账单、结清、解押、发票、材料、逾期、GPS、人工。</p>
-        <p>如果事情比较紧急，也可以留下姓名、车牌号、联系电话和问题描述，我会按人工登记逻辑处理。</p>
+        <p>我在的。这个问题我还需要您说得更具体一些，才能帮您准确判断。</p>
+        <p>您可以直接描述要办理的事项，或回复关键词：还款、账单、结清、解押、发票、材料、逾期、GPS、人工。</p>
+        <p>如果涉及合同、账务、车辆或材料，请尽量补充姓名、车牌号和联系电话，便于工作人员后续核实。</p>
       `;
     }
 
