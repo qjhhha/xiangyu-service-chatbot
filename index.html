@@ -572,6 +572,8 @@
       collected: { name: false, plate: false, phone: false },
     };
 
+    const ASSET_VERSION = "20260524-expanded-v2";
+
     const els = {
       chat: document.getElementById("chat"),
       quickBar: document.getElementById("quickBar"),
@@ -711,7 +713,7 @@
       renderQuickPrompts();
       appendDate();
       try {
-        const response = await fetch("knowledge.json", { cache: "no-store" });
+        const response = await fetch(`knowledge.json?v=${ASSET_VERSION}`, { cache: "reload" });
         const payload = await response.json();
         state.knowledge = payload.rows;
         appendBot(welcomeHtml(payload), { category: "欢迎语", issue: "客服入口" });
@@ -950,10 +952,63 @@
         if (state.lastMatch && state.lastMatch.category === row.category && isFollowUp(text)) score += 1.5;
         if (state.lastMatch && state.lastMatch.id === row.id && isFollowUp(text)) score += 3;
 
+        const route = routeAdjustment(normalized, row);
+        score += route.score;
+        if (route.strong) strongHit = true;
+
         if (score > 0) scored.push({ row, score, strongHit, hitCount });
       }
 
       return scored.sort((a, b) => b.score - a.score);
+    }
+
+    function routeAdjustment(normalized, row) {
+      const issue = normalize(row.issue || "");
+      const category = row.category || "";
+      const has = (...terms) => terms.some((term) => normalized.includes(normalize(term)));
+      let score = 0;
+      let strong = false;
+
+      const debitTiming = has("几点扣", "什么时候扣", "扣款时间", "一般几点", "今天扣", "还没扣款", "为什么还没扣款", "自动扣款", "代扣时间");
+      const debitFailure = has("卡里有钱", "有钱没扣", "银行卡没扣", "扣款失败", "代扣失败", "扣不了", "还不了", "还不进去", "支付失败", "已扣未显示", "扣了没显示", "已扣款未入账");
+      const overdueContext = has("逾期", "显示逾期", "还显示逾期", "仍逾期", "导致逾期", "入账异常");
+
+      if (debitFailure) {
+        if (category === "还款类" && issue.includes("还款失败")) {
+          score += overdueContext ? 9 : 24;
+          strong = true;
+        }
+        if (category === "逾期类" && issue.includes("扣款失败")) {
+          score += overdueContext ? 26 : -14;
+          if (overdueContext) strong = true;
+        }
+      } else if (debitTiming && category === "还款类" && issue.includes("自动扣款")) {
+        score += 20;
+        strong = true;
+      }
+
+      const settlementContext = has("结清", "提前结清", "一次性还清", "全款还", "不想分期");
+      const amountContext = has("多少钱", "多少", "金额", "尾款", "试算", "费用", "怎么算", "怎么计算", "手续费", "违约金");
+      const afterSettlementFee = has("结清后", "还清后", "结清以后") && has("费用", "手续费", "多收", "退费", "解押费");
+      if (settlementContext && amountContext) {
+        if (category === "结清类" && issue.includes("结清金额")) {
+          score += afterSettlementFee ? 6 : 24;
+          strong = true;
+        }
+        if (category === "结清类" && issue.includes("其他费用")) {
+          score += afterSettlementFee ? 24 : 6;
+          if (afterSettlementFee) strong = true;
+        }
+        if (category === "结清类" && issue.includes("提前结清申请")) score -= 5;
+      }
+
+      const releaseFee = has("解押费", "解押费用", "解押收费", "代办费", "解押要钱", "解押要收费");
+      if (releaseFee && category === "解押类" && issue.includes("费用")) {
+        score += 22;
+        strong = true;
+      }
+
+      return { score, strong };
     }
 
     function getCategoryScores(normalized) {
