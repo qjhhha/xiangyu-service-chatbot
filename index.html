@@ -609,7 +609,7 @@
       "解押", "解除抵押", "云解押", "12123", "绿本", "大本", "登记证", "发票", "开票",
       "抬头", "税号", "材料", "快递", "钥匙", "结清证明", "逾期", "延期", "宽限期",
       "滞纳金", "罚息", "减免", "GPS", "定位", "车辆", "车牌", "过户", "卖车",
-      "保险", "年检", "人工", "客服", "投诉", "法务", "公证", "拖车", "系统异常",
+      "保险", "年检", "费用", "收费", "人工", "客服", "投诉", "法务", "公证", "拖车", "系统异常",
     ];
 
     const generalReplies = [
@@ -683,7 +683,9 @@
       { test: (row) => row.category === "还款类" && row.issue.includes("账单"), text: "下一步可点击底部【业务办理】进入【还款/账单】页面查看账单、还款计划和已还期数。" },
       { test: (row) => row.category === "还款类" && row.issue.includes("失败"), text: "建议先核对银行卡余额、限额、冻结状态和绑定卡是否变更；如已扣款未入账，需要人工核对凭证。" },
       { test: (row) => row.category === "结清类" && row.issue.includes("金额"), text: "结清金额不能直接由机器人承诺，需要系统试算并由工作人员确认最终金额。" },
+      { test: (row) => row.category === "结清类" && row.issue.includes("费用"), text: "请先确认费用发生在结清前、结清试算中还是结清后；涉及多收、退费、减免或费用争议时，需要人工结合合同和系统记录核实。" },
       { test: (row) => row.category === "结清类", text: "结清类问题通常需要核实姓名、车牌号和联系电话，确认款项、材料、结清文件和解押节点。" },
+      { test: (row) => row.category === "解押类" && row.issue.includes("费用"), text: "请先确认办理方式是云解押、线下本人办理还是第三方代办；不同地区车管所要求可能不同，费用争议需人工核实。" },
       { test: (row) => row.category === "解押类", text: "如符合云解押条件，请在【交管12123】APP：首页→更多→机动车业务→解除抵押中确认；页面异常时请截图。" },
       { test: (row) => row.category === "发票类", text: "请先明确发票类型、抬头、税号、车牌号和联系方式；金额、主体或重开作废需要人工核实。" },
       { test: (row) => row.category === "材料类", text: "材料问题建议先补齐姓名、车牌号、联系电话、收件地址或快递信息，便于工作人员查件。" },
@@ -691,6 +693,17 @@
       { test: (row) => row.category === "GPS/车辆类", text: "GPS和车辆状态涉及隐私、合同状态或车辆风险，机器人只做流程引导，敏感查询需人工核实身份。" },
       { test: (row) => row.category === "人工服务类", text: "人工服务时间为周一至周五 9:00-12:00、14:00-18:00，节假日除外。" },
     ];
+
+    const categorySignals = {
+      "还款类": ["还款", "还钱", "月供", "扣款", "代扣", "银行卡", "还款卡", "账单", "明细", "几期", "多少期", "还款计划", "余额", "主动还"],
+      "结清类": ["结清", "提前结清", "提前还", "一次性", "全款", "尾款", "还清", "不想分期", "结清款", "结清金额", "转款", "结清费用", "多收", "费用争议", "绿本", "大本"],
+      "解押类": ["解押", "解除抵押", "抵押", "云解押", "12123", "车管所", "批注", "登记证", "绿本解押", "解押费", "解押收费", "代办费"],
+      "发票类": ["发票", "开票", "电子票", "月租发票", "GPS发票", "公证费发票", "服务费发票", "抬头", "税号", "重开", "作废"],
+      "材料类": ["材料", "资料", "补件", "上传", "照片", "快递", "寄送", "单号", "地址", "钥匙", "结清证明", "委托书"],
+      "逾期类": ["逾期", "晚还", "宽限期", "延期", "协商", "滞纳金", "罚息", "严重逾期", "收车", "拖车", "法务", "公证"],
+      "GPS/车辆类": ["GPS", "定位", "安装位置", "拆除", "车辆", "车在哪里", "保险", "年检", "过户", "卖车", "转让"],
+      "人工服务类": ["人工", "真人", "客服", "电话", "热线", "联系", "回电", "打不通", "投诉", "举报"],
+    };
 
     init();
 
@@ -753,13 +766,7 @@
       removeTyping();
       const row = document.createElement("div");
       row.className = "msg bot";
-      const meta = match ? `
-        <div class="meta">
-          <span class="tag">${escapeHtml(match.category || "知识库")}</span>
-          ${match.issue ? `<span class="tag">${escapeHtml(match.issue)}</span>` : ""}
-          ${handoff ? `<span class="tag">建议转人工</span>` : ""}
-        </div>
-      ` : "";
+      const meta = "";
       row.innerHTML = `<div class="avatar" aria-hidden="true"></div><div class="bubble">${html}${meta}</div>`;
       els.chat.appendChild(row);
       scrollBottom();
@@ -833,7 +840,8 @@
     }
 
     function answer(text) {
-      const match = findBestMatch(text);
+      const ranked = findBestMatches(text);
+      const match = ranked[0];
       const general = findGeneralReply(text);
       if (general && !isBusinessIntent(text, match)) {
         return {
@@ -843,7 +851,15 @@
         };
       }
 
-      if (!match || match.score < 3) {
+      if (!isConfidentMatch(text, ranked)) {
+        if (isBusinessIntent(text, match)) {
+          return {
+            html: clarificationAnswer(text, ranked),
+            match: { category: "业务澄清", issue: "避免答偏" },
+            handoff: null,
+          };
+        }
+
         return {
           html: general ? general.reply() : fallbackAnswer(text),
           match: { category: "智能客服", issue: general ? general.type : "请补充问题" },
@@ -887,43 +903,159 @@
       const normalized = normalize(text);
       const hasBusinessWord = businessWords.some((word) => normalized.includes(normalize(word)));
       const hasKnowledgeKeyword = state.knowledge.some((row) =>
-        row.keywords.some((keyword) => {
+        (row.triggers || row.keywords || []).some((keyword) => {
           const key = normalize(keyword);
           return key.length >= 2 && normalized.includes(key);
         }),
       );
 
       if (hasBusinessWord || hasKnowledgeKeyword) return true;
-      if (match && match.score >= 8) return true;
+      if (match && match.score >= 7) return true;
       if (state.lastMatch && isFollowUp(text) && !findGeneralReply(text)) return true;
       return false;
     }
 
-    function findBestMatch(text) {
+    function findBestMatches(text) {
       const normalized = normalize(text);
-      let best = null;
+      const categoryScore = getCategoryScores(normalized);
+      const scored = [];
 
       for (const row of state.knowledge) {
-        let score = 0;
-        for (const keyword of row.keywords) {
-          const key = normalize(keyword);
-          if (!key) continue;
-          if (normalized.includes(key)) score += Math.min(12, 4 + key.length * 0.8);
-          if (key.includes(normalized) && normalized.length >= 2) score += 2;
+        let score = categoryScore[row.category] || 0;
+        let strongHit = false;
+        let hitCount = 0;
+
+        for (const keyword of row.keywords || []) {
+          const hit = scorePhrase(normalized, keyword, "keyword");
+          score += hit.score;
+          if (hit.strong) strongHit = true;
+          if (hit.score > 0) hitCount += 1;
         }
 
-        for (const token of issueTokens(row.issue)) {
-          if (normalized.includes(normalize(token))) score += 3;
+        for (const question of row.questions || []) {
+          const hit = scorePhrase(normalized, question, "question");
+          score += hit.score;
+          if (hit.strong) strongHit = true;
+          if (hit.score > 0) hitCount += 1;
         }
 
-        if (normalized.includes(normalize(row.category.replace("类", "")))) score += 2.5;
-        if (state.lastMatch && state.lastMatch.category === row.category && isFollowUp(text)) score += 2;
-        if (state.lastMatch && state.lastMatch.id === row.id && isFollowUp(text)) score += 4;
+        for (const token of [...(row.issueTerms || []), ...issueTokens(row.issue)]) {
+          const hit = scorePhrase(normalized, token, "issue");
+          score += hit.score;
+          if (hit.strong) strongHit = true;
+          if (hit.score > 0) hitCount += 1;
+        }
 
-        if (!best || score > best.score) best = { row, score };
+        if (normalized.includes(normalize(row.category.replace("类", "")))) score += 2;
+        if (state.lastMatch && state.lastMatch.category === row.category && isFollowUp(text)) score += 1.5;
+        if (state.lastMatch && state.lastMatch.id === row.id && isFollowUp(text)) score += 3;
+
+        if (score > 0) scored.push({ row, score, strongHit, hitCount });
       }
 
-      return best;
+      return scored.sort((a, b) => b.score - a.score);
+    }
+
+    function getCategoryScores(normalized) {
+      const scores = {};
+      for (const [category, terms] of Object.entries(categorySignals)) {
+        for (const term of terms) {
+          const key = normalize(term);
+          if (!key) continue;
+          if (normalized.includes(key)) {
+            scores[category] = (scores[category] || 0) + (key.length >= 3 ? 2.5 : 1.4);
+          }
+        }
+      }
+      return scores;
+    }
+
+    function scorePhrase(normalized, phrase, kind) {
+      const key = normalize(phrase);
+      if (!key || key.length < 2) return { score: 0, strong: false };
+
+      const weight = kind === "question" ? 1.15 : kind === "keyword" ? 1 : 0.8;
+      if (normalized === key) return { score: 24 * weight, strong: true };
+
+      if (normalized.includes(key)) {
+        const base = key.length <= 2 ? 5 : key.length <= 4 ? 8 : 11;
+        return { score: (base + Math.min(key.length, 10) * 0.45) * weight, strong: key.length >= 3 };
+      }
+
+      if (key.includes(normalized) && normalized.length >= 4) {
+        return { score: (7 + Math.min(normalized.length, 8) * 0.35) * weight, strong: normalized.length >= 5 };
+      }
+
+      const sim = phraseSimilarity(normalized, key);
+      if (normalized.length >= 5 && key.length >= 5 && sim >= 0.72) {
+        return { score: 10 * weight, strong: true };
+      }
+      if (normalized.length >= 6 && key.length >= 6 && sim >= 0.58) {
+        return { score: 5.5 * weight, strong: false };
+      }
+
+      return { score: 0, strong: false };
+    }
+
+    function phraseSimilarity(a, b) {
+      const aGrams = grams(a);
+      const bGrams = grams(b);
+      if (!aGrams.length || !bGrams.length) return 0;
+      const bCounts = new Map();
+      bGrams.forEach((gram) => bCounts.set(gram, (bCounts.get(gram) || 0) + 1));
+      let overlap = 0;
+      for (const gram of aGrams) {
+        const count = bCounts.get(gram) || 0;
+        if (count > 0) {
+          overlap += 1;
+          bCounts.set(gram, count - 1);
+        }
+      }
+      return (2 * overlap) / (aGrams.length + bGrams.length);
+    }
+
+    function grams(value) {
+      if (value.length <= 2) return [value];
+      const result = [];
+      for (let i = 0; i < value.length - 1; i += 1) {
+        result.push(value.slice(i, i + 2));
+      }
+      return result;
+    }
+
+    function isConfidentMatch(text, ranked) {
+      const match = ranked[0];
+      if (!match) return false;
+      const second = ranked[1];
+      if (match.strongHit && match.score >= 8) return true;
+      if (match.score >= 18) return true;
+      if (match.score >= 12 && (!second || match.score - second.score >= 3 || second.row.category === match.row.category)) return true;
+      if (match.score >= 9 && match.hitCount >= 2 && (!second || match.score - second.score >= 2.5)) return true;
+      return false;
+    }
+
+    function clarificationAnswer(text, ranked) {
+      const candidates = [];
+      const seen = new Set();
+      for (const item of ranked) {
+        if (item.score < 3 || seen.has(item.row.issue)) continue;
+        seen.add(item.row.issue);
+        candidates.push(item.row);
+        if (candidates.length >= 3) break;
+      }
+
+      if (!candidates.length) {
+        return `
+          <p>我理解您是在咨询售后业务，但目前信息还不够明确。</p>
+          <p>请您补充一下具体问题，例如是还款、账单、结清、解押、发票、材料、逾期、GPS，还是需要人工客服。</p>
+        `;
+      }
+
+      return `
+        <p>为了避免答偏，请您确认一下想咨询的是哪一类问题：</p>
+        ${candidates.map((row, index) => `<p>${index + 1}. ${escapeHtml(row.issue)}</p>`).join("")}
+        <p>您可以直接回复上面的事项名称，或再补充一句具体情况，我会再给您对应回复。</p>
+      `;
     }
 
     function issueTokens(issue) {
